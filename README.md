@@ -1,2 +1,2 @@
 # Site
-# Some comments to test
+# chmod +x test.sh -> make test.sh file executable
