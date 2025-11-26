@@ -106,6 +106,7 @@ class TestInlineMarkdown(unittest.TestCase):
             ],
             new_nodes,
         )
+
     def test_extract_markdown_images(self):
         matches = extract_markdown_images(
             "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)"
@@ -123,6 +124,92 @@ class TestInlineMarkdown(unittest.TestCase):
             ],
             matches,
         )   
-      
+
+    def test_split_images(self):
+        node = TextNode(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another ![second image](https://i.imgur.com/3elNhQu.png)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with an ", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+                TextNode(" and another ", TextType.TEXT),
+                TextNode(
+                    "second image", TextType.IMAGE, "https://i.imgur.com/3elNhQu.png"
+                ),
+            ],
+            new_nodes,
+        )
+
+
+
+    def test_plain_text_only(self):
+        text = "Just some plain text."
+        nodes = text_to_textnodes(text)
+        assert nodes == [TextNode("Just some plain text.", TextType.TEXT)]
+
+
+    def test_bold_and_italic(self):
+        text = "This is **bold** and _italic_."
+        nodes = text_to_textnodes(text)
+
+        # Check sequence of types
+        types = [n.text_type for n in nodes]
+        assert types == [
+            TextType.TEXT,
+            TextType.BOLD,
+            TextType.TEXT,
+            TextType.ITALIC,
+            TextType.TEXT,
+        ]
+
+
+    def test_code_span(self):
+        text = "Use `code` here."
+        nodes = text_to_textnodes(text)
+
+        assert any(n.text == "code" and n.text_type == TextType.CODE for n in nodes)
+
+
+    def test_image_and_link(self):
+        text = "![alt](http://img) and [click](http://example.com)"
+        nodes = text_to_textnodes(text)
+
+        # One image node
+        image_nodes = [n for n in nodes if n.text_type == TextType.IMAGE]
+        assert len(image_nodes) == 1
+        assert image_nodes[0].text == "alt"
+        assert image_nodes[0].url == "http://img"
+
+        # One link node
+        link_nodes = [n for n in nodes if n.text_type == TextType.LINK]
+        assert len(link_nodes) == 1
+        assert link_nodes[0].text == "click"
+        assert link_nodes[0].url == "http://example.com"
+
+    def test_text_to_textnodes(self):
+            nodes = text_to_textnodes(
+                "This is **text** with an _italic_ word and a `code block` and an ![image](https://i.imgur.com/zjjcJKZ.png) and a [link](https://boot.dev)"
+            )
+            self.assertListEqual(
+                [
+                    TextNode("This is ", TextType.TEXT),
+                    TextNode("text", TextType.BOLD),
+                    TextNode(" with an ", TextType.TEXT),
+                    TextNode("italic", TextType.ITALIC),
+                    TextNode(" word and a ", TextType.TEXT),
+                    TextNode("code block", TextType.CODE),
+                    TextNode(" and an ", TextType.TEXT),
+                    TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+                    TextNode(" and a ", TextType.TEXT),
+                    TextNode("link", TextType.LINK, "https://boot.dev"),
+                ],
+                nodes,
+            )
+
+
+
 if __name__ == "__main__":
     unittest.main()  
