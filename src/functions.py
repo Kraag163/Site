@@ -118,3 +118,14 @@ def text_to_textnodes(text):
     images_nodes = split_nodes_image(code_nodes)
     link_nodes = split_nodes_link(images_nodes)
     return link_nodes
+
+def markdown_to_blocks(markdown):
+    if not markdown:
+        raise Exception("the input is empty")
+    list_blocks = []
+    blocks = markdown.split("\n\n")
+    for block in blocks:
+        if not block:
+            continue
+        list_blocks.append(block.strip())
+    return list_blocks
